@@ -1,0 +1,12 @@
+[submodule "dependencies/c_allocator"]
+	path = dependencies/c_allocator
+	url = git@github.com:hpeteri/c_allocator
+[submodule "dependencies/sglr"]
+	path = dependencies/sglr
+	url = git@github.com:hpeteri/sglr
+[submodule "dependencies/cmath"]
+	path = dependencies/cmath
+	url = git@github.com:hpeteri/cmath
+[submodule "dependencies/platform"]
+	path = dependencies/platform
+	url = git@github.com:hpeteri/platform

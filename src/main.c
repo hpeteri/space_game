@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 
 #define N1_ALLOCATOR_IMPLEMENTATION
@@ -6,123 +7,172 @@
 #define N1_CMATH_IMPLEMENTATION
 #include "n1_cmath.h"
 
-#include "n1_platform_main.c"
+#include "input/input.h"
 
-#include "input.c"
+#include "core/core.c"
+#include "sglr.h"
+#include "scene.c"
+#include "console/console.h"
 
-//renderer
-#include "sglr.c"
+#include "tweak/tweak.h"
 
-sglr_Context* renderer;
+#include "game.c"
 
+sglr_Texture missing_texture;
+sglr_Texture white_texture;
 
-uint32_t alloc_count = 0;
-void* my_malloc(size_t size){
-  alloc_count ++;
-  printf("malloc (%d)\n",alloc_count);
-  return malloc(size);
-}
-
-void* my_realloc(void* data, size_t size){
-  printf("realloc, %p (%d)\n", data, alloc_count);
-  return realloc(data, size);
-}
-
-void my_free(void* data){
-  alloc_count --;
-  printf("freed: %p (%d)\n", data, alloc_count);
-  free(data);
-}
-
-int main(int argc, const char* argv[]){
-  //Create window
-  n1_Window* window = platform_create_window("simple window");
-  perror("created window");
-
-  if(!platform_create_glcontext(window, 4, 6, 1)){
-    perror("failed to create glContext\n");
-    return 1;
-  }
-  perror("created gl context");
-  
-  n1_Allocator renderer_allocator = default_allocator();
-  
 #if 0
-  renderer_allocator.alloc        = my_malloc;
-  renderer_allocator.realloc      = my_realloc;
-  renderer_allocator.free         = my_free;
+asm(".section .text");
+asm("fileData: ");
+asm(".incbin \"src/tmp.glsl\"");
+asm(".byte 0");
+asm(".previous");
 #endif
-    
-  renderer = sglr_make_context(renderer_allocator);
-  
-  sglr_set_context(renderer);
-  sglr_make_shader_builtin_simple();
 
-  sglr_make_main_render_target(256, 256, 4, GL_RGBA16F, GL_DEPTH24_STENCIL8);
-  glEnable(GL_MULTISAMPLE);
+void create_temp_textures(){
   
-  
-  if(!renderer){
-    perror("failed to create renderer context");
-    return 1;
-  }
-  
-  platform_init_time();
-  
-  char fps_buffer[50] = {0};
-  char stat_buffer[1024] = {0};
-  
-  uint64_t ns_start = platform_get_time_ns();
-  uint64_t ns_frame_start = ns_start;
-    
-  int ns_fps      = 0;
-  int frame_count = 0;
-  float dt = 0;
-
-  int64_t gpu_time = 0;
-  int64_t cpu_time = 0;
-  
-  int is_running = 1;
-      
-  int window_width = 0;
-  int window_height = 0;
-
-  sglr_Camera cam = sglr_make_camera();
-  
-  sglr_Texture missing_texture;
-  sglr_Texture white_texture;
-    
   {
     uint32_t magenta = 0xff8a00f6;
     uint32_t black = 0xff000000;
-    uint32_t bytes[16] = {
-      magenta, black, magenta, black,
-      black, magenta, black, magenta,
-      magenta, black, magenta, black,
-      black, magenta, black, magenta,
-    };
-                      
-    missing_texture = sglr_make_texture_2d_rgba(4, 4, bytes);
+
+    int size = 32;
+    uint32_t bytes[4096];
+
+    int frac = size / 32;
+    int w = size / 4;
+    for(int y = 0; y < size; y++){
+      for(int x = 0; x < size; x++){
+
+        
+        const uint32_t color = ((x / w) + (y / w)) % 2 ? magenta : black;
+        
+        bytes[y * size + x] = color;
+      }
+    }
+    missing_texture = sglr_make_texture_2d(size, size,
+                                           GL_SRGB_ALPHA,
+                                           GL_RGBA, GL_UNSIGNED_BYTE,
+                                           bytes);
+    sglr_set_texture(missing_texture);
+    sglr_make_texture_mipmap(missing_texture);
+    sglr_set_texture_min_filter(missing_texture, GL_NEAREST_MIPMAP_LINEAR);
+    sglr_set_texture_wrap(missing_texture, GL_CLAMP_TO_EDGE);
+    
     sglr_set_texture_debug_name(missing_texture, "missing_texture");
   }
   {
-    
     uint32_t white = 0xffffffff;                      
-    white_texture = sglr_make_texture_2d_rgba(1, 1, &white);
-    sglr_set_texture_debug_name(missing_texture, "white_texture");
-  }
 
+    //white_texture = sglr_make_texture_2d_rgba(1, 1, &white);
+    
+    white_texture = sglr_make_texture_2d(1, 1,
+                                         GL_SRGB_ALPHA,
+                                         GL_RGBA, GL_UNSIGNED_BYTE,
+                                         &white);
+    
+    sglr_set_texture(white_texture);
+    sglr_set_texture_wrap(white_texture, GL_CLAMP_TO_EDGE);
+    sglr_set_texture_debug_name(white_texture, "white_texture");
+  }
+}
+
+void get_gl_extensions(){
+ int extension_count;
+ glGetIntegerv(GL_NUM_EXTENSIONS, &extension_count);
+
+ #if 0
+ for(int i = 0; i < extension_count; i++){
+  const char* extension_name = glGetStringi(GL_EXTENSIONS, i);
+
+  printf("[%d]: '%s'\n", i, extension_name);
+ }
+#endif
+
+}
+
+void perf_mon_amd(){
+  int num_groups;
+  uint32_t* groups;
+  
+  glGetPerfMonitorGroupsAMD(&num_groups, 0, NULL);
+  sglr_check_error();
+  printf("num groups: %d\n", num_groups);
+
+  groups = malloc(sizeof(uint32_t) * num_groups);
+
+  glGetPerfMonitorGroupsAMD(NULL, num_groups, groups);
+  sglr_check_error();
+  
+  
+  for(int i = 0; i < num_groups; i++){
+    char group_name[256];
+    group_name[0] = 0;
+    glGetPerfMonitorGroupStringAMD(groups[i], 256, NULL, group_name);
+    sglr_check_error();
+    printf("[%d]: '%s'\n", i, group_name);
+
+
+    int num_counters;
+    int num_max_active;
+    glGetPerfMonitorCountersAMD(groups[i],
+                                &num_counters,
+                                &num_max_active,
+                                0,
+                                NULL);
+    printf("counters: %d (max active: %d)\n", num_counters, num_max_active);
+    
+    GLuint* counters = (GLuint*) malloc(num_counters * sizeof(GLuint));
+    glGetPerfMonitorCountersAMD(groups[i], NULL, NULL,
+                                num_counters,
+                                counters);
+
+    for(int ii = 0; ii < num_counters; ii++){
+      GLuint counter = counters[ii];
+      char counter_name[256];
+      
+      glGetPerfMonitorCounterStringAMD(groups[i],
+                                       counter,
+                                       256, NULL, counter_name);
+      printf("-> [%d]: '%s'\n", ii, counter_name); 
+      sglr_check_error();
+    }
+
+    free(counters);
+  }
+  
+  free(groups);
+}
+
+#include <stdio.h>
+
+int main(int argc, const char* argv[]){
+
+  set_cwd(get_exe_dir());
+  set_cwd("..");
+  
+  load_tweak_file();
+  
+  int err = make_core();
+  if(err){
+    return err;
+  }
+  
+  n1_Window* window = get_main_window();
+
+  create_temp_textures();
+  
   printf("gpu:       %s\n", sglr_gpu_name());
   printf("vendor:    %s\n", sglr_gpu_vendor());
   printf("gl ver.:   %s\n", sglr_gl_version());
   printf("glsl ver.: %s\n", sglr_glsl_version());
- 
-  while(is_running){
-    sglr_begin_query_time_elapsed_ns();
-    sglr_stats_reset();
+
+  int is_running = 1;
+
+  get_gl_extensions();
     
-    //handle window events
-    input_new_frame();
+  while(is_running){
+    
+    next_frame();
     
     platform_window_get_events(window);
     n1_WindowEvent e = platform_window_get_next_event(window);
@@ -135,279 +185,55 @@ int main(int argc, const char* argv[]){
         int mouse_x = e.mouse.x;
         int mouse_y = e.mouse.y;
 
-        input_set_mouse_pos(mouse_x, mouse_y, window_width, window_height);
+        input_set_mouse_pos(mouse_x, mouse_y, window->width, window->height);
         
       }
       else if(e.type == EVENT_SIZE){
-        window_width = e.size.width;
-        window_height = e.size.height;
-        
-        sglr_resize_main_render_target(window_width,
-                                       window_height);
 
-#if 0
-        sglr_camera_set_ortho(&cam,
-                              mat4_ortho_rh(-window_width / 2.0, window_width/ 2.0,
-                                            window_height/ 2.0, -window_height/ 2.0,
-                                            0.01, 10000)
-                              );
-#else
-        sglr_camera_set_perspective(&cam,
-                                    mat4_perspective_rh(90,
-                                                        window_width / (float)window_height,
-                                                        0.01,
-                                                        100000));
-          
-#endif
-            
+        sglr_resize_main_render_target(window->width,
+                                       window->height);
+        update_editor_camera(window->width, window->height);
+        
       }else if(e.type == EVENT_KEY_DOWN){
         input_update_key(e.key.keycode, 1);
-
+        console_push_control_keycode(e.key.keycode);
       }else if(e.type == EVENT_KEY_UP){
         input_update_key(e.key.keycode, 0);
 
       }else if(e.type == EVENT_MOUSE_DOWN){
         input_set_mouse_button(e.key.keycode, 1);
-
       }else if(e.type == EVENT_MOUSE_UP){
         input_set_mouse_button(e.key.keycode, 0);
+
+      }else if(e.type == EVENT_CHAR){
+        console_push_keycode(e.key.keycode);
       }
-      
       
       e = platform_window_get_next_event(window);
     }
 
-    ns_fps ++;
-    frame_count ++;
-
     sglr_set_render_target(sglr_main_render_target());
-    sglr_set_clear_color_i32_rgba(0xff323232);
-    
+    sglr_set_clear_color_u32_rgba(0xff000000);
+    sglr_set_clear_depth(1.0f);
     sglr_clear_render_target_depth();
     sglr_clear_render_target_color();
     
-    //update
-    {
-      vec3 delta = vec3_zero();
-      float speed = 500 * dt;
-      
-      if(input_is_key_down('W')){
-        delta.z -= speed;
-      }
-      if(input_is_key_down('S')){
-        delta.z += speed;
-      }
-
-      if(!input_is_key_down(' ')){
-        
-        if(input_is_key_down('A')){
-          delta.x -= speed;
-        }
-        if(input_is_key_down('D')){
-          delta.x += speed;
-        }
-        if(input_is_key_down('Q')){
-          delta.y -= speed;
-        }
-        if(input_is_key_down('E')){
-          delta.y += speed;
-        }
-      }
-      
-      sglr_camera_move(&cam, quat_mulv(sglr_camera_rot(cam), delta));
-      
-      if(input_is_right_mouse_down()){
-        vec3 euler = cam.euler;
-        
-        float rot_speed = PI;
-
-        vec3 mouse_delta = vec3_make(input_mouse_delta().x, input_mouse_delta().y, 0);
-        
-        //mouse_delta = quat_mulv(sglr_camera_rot(cam), mouse_delta); 
-        euler.x += mouse_delta.y * rot_speed; 
-        euler.y -= mouse_delta.x * rot_speed; 
-        sglr_camera_set_euler(&cam, euler);
-      }
-      
-    }
     
-    { 
-      sglr_CommandBuffer* cb = sglr_make_command_buffer();
-      sglr_command_buffer_set_render_target(cb,
-                                            sglr_main_render_target());
+    update_and_draw();
 
-      {
-        // triangles
-        sglr_Material simple = sglr_make_material(sglr_make_shader_builtin_simple());
-        sglr_set_material_texture_0(&simple, missing_texture.id);
-
-
-        
-        sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(simple,
-                                                                             GL_TRIANGLES);
-        
-        sglr_CommandBuffer2* scb = sglr_make_command_buffer2_im(pipeline);
-        
-        sglr_command_buffer2_set_cam(scb, cam);
-      
-      
-        sglr_immediate_triangle(scb,
-                                vec3_make(0, 0, -1),
-                                vec3_make(0,0,0),
-                                ~0,
-                                vec3_make(100, 0, -1),
-                                vec3_make(1,0,0),
-                                ~0,
-                                vec3_make(0, 100, -1),
-                                vec3_make(0,1,0),
-                                ~0);
-        
-        sglr_command_buffer2_submit(scb, cb);
-      }
-      
-      {
-        //lines
-        sglr_Material simple = sglr_make_material(sglr_make_shader_builtin_simple());
-        sglr_set_material_texture_0(&simple, white_texture.id);
-        
-        sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(simple,
-                                                                             GL_TRIANGLES);
-
-        pipeline.renderer_state.flags ^= SGLR_CULL_FACE;
-        
-        sglr_CommandBuffer2* scb = sglr_make_command_buffer2_im(pipeline);
-        sglr_command_buffer2_set_cam(scb, cam);
-      
-
-        float size = 100;
-
-        //x
-        sglr_immediate_line_2d(scb,
-                               vec3_make(0, 1, 0), //normal
-                               vec3_make(0,0, 0),
-                               0xff0000ff,
-                               vec3_make(size, 0, 0),
-                               0xff0000ff,
-                               10);
-        
-        //y
-        sglr_immediate_line_2d(scb,
-                               vec3_make(0, 0, 1), //normal
-                               vec3_make(0, 0, 0),
-                               0xff00ff00,
-                               vec3_make(0, size, 0),
-                               0xff00ff00,
-                               10);
-
-        //z
-        sglr_immediate_line_2d(scb,
-                               vec3_make(0, 1, 0), //normal
-                               vec3_make(0, 0, 0),
-                               0xffff0000,
-                               vec3_make(0, 0, size),
-                               0xffff0000,
-                               10);
-
-        sglr_immediate_aabb_outline(scb,
-                                    vec3_make(size * -10, size * -10, size * -10),
-                                    vec3_make(size * 10, size * 10, size * 10),
-                                    ~0,
-                                    10);
-                                    
-        sglr_command_buffer2_submit(scb, cb);
-      }
-      {
-        //draw fps
-        sglr_Material text_mat = sglr_make_material(sglr_make_shader_builtin_text());
-        
-        sglr_set_material_texture_0(&text_mat, sglr_make_bitmap_font_builtin().texture.id);
-        
-        sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(text_mat,
-                                                                             GL_TRIANGLES);
-
-        pipeline.renderer_state.flags ^= SGLR_CULL_FACE;
-        pipeline.renderer_state.flags |= SGLR_BLEND;
-                
-        sglr_CommandBuffer2* scb = sglr_make_command_buffer2_im(pipeline);
-
-        sglr_Camera cam2 = sglr_make_camera();
-        
-        
-        sglr_camera_set_ortho(&cam2,
-                              mat4_ortho_rh(0, window_width,
-                                            window_height, 0,
-                                            0.01, 10000)
-                              );
-        sglr_command_buffer2_set_cam(scb, cam2);
-        
-        sglr_immediate_text(scb,
-                            fps_buffer,
-                            vec3_make(10, window_height - 10 - 8 * 2, -1),
-                            2,
-                            ~0);
-
-        {
-          sprintf(stat_buffer,
-                  "frame time: %f ms\n"
-                  "gpu time:   %f ms\n"
-                  "cpu time:   %f ms\n"
-                  "\n"
-                  "trianlges: %d",
-                  dt * 1000,
-                  gpu_time / 1000000.0f,
-                  cpu_time / 1000000.0f,
-                  sglr_stats_triangle_count());
-
-          
-          sglr_immediate_text(scb,
-                              stat_buffer,
-                              vec3_make(10, window_height - 10 - 8 * 2  - (2.5f * 8), -1),
-                              1,
-                              ~0);
-          
-          //printf("frame time :: %f ms\n", dt * 1000);
-          //printf("gpu time   :: %f ms \n", gpu_time / (float)1000000);
-          //printf("cpu time   :: %f ms \n", cpu_time / (float)1000000);
-          //printf("\n");
-        }
-                
-        sglr_command_buffer2_submit(scb, cb);
-      }
-      
-      sglr_command_buffer_submit(cb);
-    }
-
-    
-    //draw
     sglr_flush();
+    sglr_blit_main_render_target(window->width, window->height, GL_NEAREST);
 
-        
-    sglr_blit_main_render_target(window_width, window_height, GL_NEAREST);
+    //update gpu and cpu time
+    update_time_stats_pre_swap();
     
-    gpu_time = sglr_end_query_time_elapsed_ns();
-    cpu_time = platform_get_time_ns() - ns_frame_start;
-    
-    sglr_flush();
+    //swap buffers
     platform_window_swap_buffers(window);
 
-    // dt
-    uint64_t ns_end = platform_get_time_ns();
-    dt = platform_convert_ns_to_seconds(ns_end - ns_frame_start);
-    ns_frame_start = ns_end;
     
-    
-    if(platform_convert_ns_to_seconds(ns_end - ns_start) >= 1){
-      ns_start += second_to_ns;
-      sprintf(fps_buffer, "%d", ns_fps);
-      // printf("fps: %d\n", ns_fps);
-      ns_fps = 0;          
-    }
+    end_frame();
   }
-  
-  sglr_free_debug_logger();
-  sglr_free_context(sglr_current_context());
-  platform_free_glcontext(window);  
-  platform_free_window(window);
-    
+
+  free_core();
   return 0;
 }
