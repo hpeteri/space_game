@@ -184,12 +184,22 @@ void draw_debug_view(){
   int32_t avail = sglr_vram_avail();
 
   sglr_check_error();
+
+
+#if defined (_MSC_VER)
+  sprintf(buffer,
+          "vram: %.0f%% (%d MB)\n"
+          "ram:  %zd KB",
+          (1 - avail / (float)total) * 100, total / 1024,
+          get_process_mem_use());
+#elif defined (__GNUC__)
   sprintf(buffer,
           "vram: %.0f%% (%d MB)\n"
           "ram:  %ld KB",
           (1 - avail / (float)total) * 100, total / 1024,
           get_process_mem_use());
-
+#endif
+  
   text_size = sglr_immediate_text(scb,
                                   buffer,
                                   cursor,

@@ -21,13 +21,8 @@
 sglr_Texture missing_texture;
 sglr_Texture white_texture;
 
-#if 0
-asm(".section .text");
-asm("fileData: ");
-asm(".incbin \"src/tmp.glsl\"");
-asm(".byte 0");
-asm(".previous");
-#endif
+
+#include "temp_shader_loading.c"
 
 void create_temp_textures(){
   
@@ -169,7 +164,7 @@ int main(int argc, const char* argv[]){
   int is_running = 1;
 
   get_gl_extensions();
-    
+  
   while(is_running){
     
     next_frame();
@@ -189,7 +184,6 @@ int main(int argc, const char* argv[]){
         
       }
       else if(e.type == EVENT_SIZE){
-
         sglr_resize_main_render_target(window->width,
                                        window->height);
         update_editor_camera(window->width, window->height);
@@ -211,7 +205,8 @@ int main(int argc, const char* argv[]){
       
       e = platform_window_get_next_event(window);
     }
-
+    
+    
     sglr_set_render_target(sglr_main_render_target());
     sglr_set_clear_color_u32_rgba(0xff000000);
     sglr_set_clear_depth(1.0f);
@@ -220,8 +215,8 @@ int main(int argc, const char* argv[]){
     
     
     update_and_draw();
-
     sglr_flush();
+
     sglr_blit_main_render_target(window->width, window->height, GL_NEAREST);
 
     //update gpu and cpu time

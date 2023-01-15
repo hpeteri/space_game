@@ -74,24 +74,23 @@ int load_tweak_file(){
   }
     
   FileContent file = read_entire_file("options.variables", default_allocator());
-
+  
   struct TweakFolder* current_folder = NULL;
     
   if(!file.data){
     perror("failed to 'options.variables': ");
     return 1;
-  }
-
-
+  }  
   const char* start = file.data;
-  const char* end   = sl_next_line(start);
-
   int linum = 1;
 
   while(*start){
     start = sl_eat_whitespace(start);
-      
-    int len = end - start - 1;
+    const char* line_end  = sl_next_line(start); // return the start of next line
+    const char* end = sl_eat_whitespace_from_end(line_end - 1, start);
+
+    int len = end - start + 1;
+    
     if(len > 1){
       if(start[0] == '.'){
         //folder
@@ -104,6 +103,7 @@ int load_tweak_file(){
             if(sl_strlen(folder->name) != (size_t)len  - 2){
               continue;
             }
+            
             if(memcmp(folder->name, start + 2, len - 2)){
               continue;
             }
@@ -190,13 +190,19 @@ int load_tweak_file(){
       }
         
     }
-
-    start = end;
-    end   = sl_next_line(start);
+    
+    start = line_end;
+    
 
     linum ++;
   }
 
+  if(start > (char*)(file.data) + file.size){
+    printf("BUFFER OVERRUN!!!\n");
+    //BREAK_POINT;
+  }
+
+  
   printf("=== startup ===\n");
   printf("width: %d\n", tweaks_.startup.window_width);
   printf("height: %d\n", tweaks_.startup.window_height);

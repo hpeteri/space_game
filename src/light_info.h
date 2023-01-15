@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "cmath/n1_cmath.h"
 
-#define MAX_DIR_LIGHT_COUNT   (1)
+#define MAX_DIR_LIGHT_COUNT   (256)
 #define MAX_POINT_LIGHT_COUNT (256)
 #define MAX_SPOT_LIGHT_COUNT  (256)
 

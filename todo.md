@@ -1,6 +1,3 @@
-* AMD profiler
-
-  
 * Graphics
   - Particle emitters
   - Normal maps, tesselation maps
@@ -66,3 +63,27 @@
   - controller support
   - audio 
   - when mapping input keys, ' gets mapped to right arrow
+
+
+
+
+
+Shadow mapping in deferred
+
+- immediate:
+  - calculate if in shadow
+    * world space to light space
+    * texture lookups
+
+- Deferred shadow + immediate light
+  - single texture lookup if in shadow !
+  - need surface normal in order to calculate color intensity
+  - less branching in the shader
+  - separate compute step or cpu task
+  - not that much memory since shadows can be stored in r8 texture
+  - filtering is also simpler
+  - less uniform data passed to shaders, less bandwidth use
+
+  
+
+ 

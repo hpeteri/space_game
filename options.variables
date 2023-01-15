@@ -1,10 +1,8 @@
 ./startup
-window_width  1024 
-window_height 2048
+window_width  800
+window_height 800
   
 ./graphics
-vsync 1
-shadow_quality 1
-   
-./graphics
 vsync 0
+shadow_quality 1
+

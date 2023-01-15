@@ -22,6 +22,9 @@ int32_t sl_atoi(const char* str);
 const char* sl_next_token(const char* str, char token);
 const char* sl_next_line(const char* str);
 const char* sl_eat_whitespace(const char* str);
+const char* sl_eat_whitespace_from_end(const char* end, const char* start);
+
+
 
 #if defined SL_STRING_IMPLEMENTATION
 
@@ -191,5 +194,15 @@ const char* sl_eat_whitespace(const char* str){
 
 }
 
+const char* sl_eat_whitespace_from_end(const char* end, const char* start){
+  while(end > start){
+    if(!sl_is_whitespace(*end)){
+      break;
+    }
+    end --;    
+  }
+  
+  return end;
+}
 #endif
 #endif

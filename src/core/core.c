@@ -21,19 +21,22 @@ int make_core(){
   
   // == window ===
   
-  n1_Window* window = platform_create_window("simple window", 32, 32);
+  n1_Window* window = platform_create_window("simple window", window_width, window_height);
   core.window = window;
+
   
-  if(!platform_create_glcontext(window, 4, 6, 1)){
+#if defined(DEBUG_BUILD)
+  int is_debug = 1;
+#elif defined(RELEASE_BUILD)
+  int is_debug = 0;
+#endif
+  
+  if(!platform_create_glcontext(window, 4, 6, is_debug)){
     perror("failed to create glContext\n");
     return 1;
   }
   
-  if(platform_gl_swap_interval(0)){
-    printf("failed to set swap interval\n");
-    perror("");
-  }
-    
+  platform_gl_swap_interval(tweaks.graphics.vsync);    
   
   platform_init_time();
   
@@ -49,7 +52,7 @@ int make_core(){
   
   sglr_set_context(renderer);
   
-  sglr_make_main_render_target(window_width, window_height, 4, GL_RGBA16F, GL_DEPTH_COMPONENT32F);
+  sglr_make_main_render_target(window_width, window_height, 0, GL_RGBA16F, GL_DEPTH_COMPONENT32F);
   sglr_set_render_target_debug_name(sglr_main_render_target(), "main_rt");
   
   glEnable(GL_MULTISAMPLE);
