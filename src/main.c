@@ -215,6 +215,48 @@ int main(int argc, const char* argv[]){
     
     
     update_and_draw();
+
+    // compute thing
+    if(0){
+      
+      static sglr_Shader compute;
+      static sglr_Texture test_texture;
+      if(!compute.id){
+        FileContent file = read_entire_file("data/shaders/test_compute/test_compute.comp.glsl", default_allocator());
+
+        compute = sglr_make_shader_compute(file.data);        
+        default_allocator().free(file.data);
+
+        test_texture = sglr_make_texture_2d(1024, 1024,
+                                            GL_RGBA32F,
+                                            GL_RGBA,
+                                            GL_UNSIGNED_BYTE,
+                                            NULL);
+        
+        sglr_set_texture_debug_name(test_texture, "compute_test_texture");
+          
+      }
+
+
+      
+
+      sglr_CommandBuffer* command_buffer = sglr_make_command_buffer();
+
+      sglr_Material mat = sglr_make_material(compute);
+      sglr_set_material_image_i(&mat, 0, test_texture);
+                                  
+      sglr_ComputePipeline pipeline = sglr_make_compute_pipeline(mat);
+      sglr_CommandBuffer2* secondary_command_buffer = sglr_make_command_buffer2_compute(pipeline);
+      
+      sglr_compute_dispatch(secondary_command_buffer,
+                            32, 32, 1);
+
+      
+      sglr_command_buffer2_submit(secondary_command_buffer,
+                                  command_buffer);
+      sglr_command_buffer_submit(command_buffer);
+    }
+    
     sglr_flush();
 
     sglr_blit_main_render_target(window->width, window->height, GL_NEAREST);
@@ -224,7 +266,6 @@ int main(int argc, const char* argv[]){
     
     //swap buffers
     platform_window_swap_buffers(window);
-
     
     end_frame();
   }

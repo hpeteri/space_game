@@ -76,7 +76,7 @@ static sglr_Buffer test_create_lights(){
   fit_shadow_frustum();
   
   {
-    for(int i = 0; i < 10; i++){
+    for(int i = 0; i < 1; i++){
       add_dir_light(&lights, make_dir_light(sun_pos, sglr_inverse_gamma(0xffffff, 2.2), 0.5));
       
       lights.dir_lights[i].projections[0] =  sglr_camera_matrix(light_cam_0);
@@ -102,6 +102,8 @@ static sglr_Buffer test_create_lights(){
 }
 
 void draw_deferred_shadows(sglr_Buffer light_buffer){
+  return;
+  
   if(!deferred_shadows.id){
     n1_Window* window = get_main_window();
     deferred_shadows = sglr_make_render_target_layered(window->width, window->height, 1,
@@ -114,12 +116,18 @@ void draw_deferred_shadows(sglr_Buffer light_buffer){
   sglr_clear_render_target_color(deferred_shadows);
 
   sglr_Material mat = sglr_make_material(shadow_pass_shader());
-  sglr_set_material_texture_i(&mat,
+
+  sglr_set_material_sampler_i_2(&mat,
                               0,
                               sglr_main_render_target().color_attachment_1.type,
                               sglr_main_render_target().color_attachment_1.id);
-  sglr_set_material_texture_i(&mat, 1, GL_TEXTURE_2D_ARRAY, shadow_cascade_0.depth_attachment.id);
-  sglr_set_material_light_info(&mat, light_buffer.id);
+
+  sglr_set_material_sampler_i_2(&mat,
+                                1,
+                                shadow_cascade_0.depth_attachment.type,
+                                shadow_cascade_0.depth_attachment.id);
+  
+  sglr_set_material_buffer_i(&mat, 0, light_buffer);
     
   
   sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(mat, GL_TRIANGLES);
@@ -146,7 +154,7 @@ void draw_deferred_shadows(sglr_Buffer light_buffer){
 }
 void draw_scene(){
   if(!shadow_cascade_0.id){
-    shadow_cascade_0 = sglr_make_render_target_layered(1024, 1024, 3,
+    shadow_cascade_0 = sglr_make_render_target_layered(4096, 4096, 1,
                                                        GL_NONE,
                                                        GL_DEPTH_COMPONENT32);
 
@@ -199,9 +207,9 @@ void draw_scene(){
     //normal
     sglr_Material mat = sglr_make_material(pbr_shader());
     //sglr_Material mat = sglr_make_material(sglr_make_shader_builtin_world_space());
-    sglr_set_material_texture_i(&mat, 0, GL_TEXTURE_2D, missing_texture.id);
-    sglr_set_material_texture_i(&mat, 1, GL_TEXTURE_2D_ARRAY, shadow_cascade_0.depth_attachment.id);
-    sglr_set_material_light_info(&mat, light_buffer.id);
+    sglr_set_material_sampler_i(&mat, 0, missing_texture);
+    sglr_set_material_sampler_i_2(&mat, 1, GL_TEXTURE_2D_ARRAY, shadow_cascade_0.depth_attachment.id);
+    sglr_set_material_buffer_i(&mat, 0, light_buffer);
     
     sglr_GraphicsPipeline pipeline_0 = sglr_make_graphics_pipeline_default(mat, GL_TRIANGLES);
     pipeline_0.renderer_state.flags |= SGLR_CULL_FACE;
@@ -288,7 +296,7 @@ void draw_scene(){
   {
     //lines
     sglr_Material flat = sglr_make_material(sglr_make_shader_builtin_flat());
-    sglr_set_material_texture_i(&flat, 0, GL_TEXTURE_2D, white_texture.id);
+    sglr_set_material_sampler_i(&flat, 0, white_texture);
     
     sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(flat, GL_TRIANGLES);
     pipeline.renderer_state.flags ^= SGLR_CULL_FACE;

@@ -117,7 +117,7 @@ void draw_debug_view(){
   
   // material for bitmap font
   sglr_Material text_mat = sglr_make_material(sglr_make_shader_builtin_text());
-  sglr_set_material_texture_i(&text_mat, 0, GL_TEXTURE_2D, sglr_make_bitmap_font_builtin().texture.id);
+  sglr_set_material_sampler_i(&text_mat, 0, sglr_make_bitmap_font_builtin().texture);
 
   sglr_Camera cam   = sglr_make_camera();
   sglr_camera_set_ortho_rh(&cam,
@@ -212,7 +212,7 @@ void draw_debug_view(){
   extern sglr_Texture white_texture;
     
   sglr_Material mat = sglr_make_material(sglr_make_shader_builtin_flat());
-  sglr_set_material_texture_i(&mat, 0, GL_TEXTURE_2D, white_texture.id);
+  sglr_set_material_sampler_i(&mat, 0, white_texture);
     
   sglr_GraphicsPipeline pipeline2 = sglr_make_graphics_pipeline_default(mat, GL_TRIANGLES);
   pipeline2.renderer_state.flags = 0;

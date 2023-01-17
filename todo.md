@@ -1,6 +1,10 @@
 * Graphics
   - Particle emitters
+    - GPU :)
+    - indirect draw
+  
   - Normal maps, tesselation maps
+
   - Mesh Loading
     - obj parser
     - gltf parser
@@ -21,17 +25,18 @@
     - calculate cascades
     - add cascade steps into light info
     - add farZ into camera params
-    - light info should be part of sglr_, since there is basic lighting shader
-
-       
-  - z prepass
+ 
   - mesh aabb (RenderBounds)
   - mesh culling  
-  - color macros
-  - shader loading from file
-  - shader_define_variable()
-  - hotloader :)
-  
+  - mesh lod
+  - shader_define_variable() / #include directive
+  - hotloader
+  - set_texture and set_sampler should be different
+  - command buffer sorting
+  - compute barrier
+  - remove light info from sglr, use buffer_0 or something similar to texture
+  - add posibility to cache im buffers / use same buffer for other 
+ 
 * command line arguments
   
 *  Console:
@@ -43,12 +48,8 @@
   + mappings don't work, shift, '
     
 * Logging
-  - Debug log
-
-* Profiling
-  - graph of cpu and gpu times
-  - graph memory use
-
+  - Debug log to file + console
+  
 * ECS / Scene
   - lights
   
@@ -56,17 +57,12 @@
 
 * Editor
   - Draw icons for lights
-  
- 
+   
 * Platform
   - glcontext doesn't pick visual. just selects the first one. Should study how this should be done.
   - controller support
   - audio 
   - when mapping input keys, ' gets mapped to right arrow
-
-
-
-
 
 Shadow mapping in deferred
 

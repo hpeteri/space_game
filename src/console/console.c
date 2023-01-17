@@ -92,10 +92,10 @@ void update_and_draw_console(){
   
   extern sglr_Texture white_texture;
   sglr_Material flat_mat = sglr_make_material(sglr_make_shader_builtin_flat());
-  sglr_set_material_texture_i(&flat_mat, 0, GL_TEXTURE_2D, white_texture.id);
+  sglr_set_material_sampler_i(&flat_mat, 0, white_texture);
   
   sglr_Material text_mat = sglr_make_material(sglr_make_shader_builtin_text());
-  sglr_set_material_texture_i(&text_mat, 0, GL_TEXTURE_2D, sglr_make_bitmap_font_builtin().texture.id);
+  sglr_set_material_sampler_i(&text_mat, 0, sglr_make_bitmap_font_builtin().texture);
   
   {
     

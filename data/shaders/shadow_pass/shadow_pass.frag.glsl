@@ -1,7 +1,7 @@
 #version 330
    
-uniform sampler2D      texture0;
-uniform sampler2DArray texture1;
+uniform sampler2D      texture_0;
+uniform sampler2DArray texture_1;
 
 struct PointLight{
   vec3  pos;
@@ -16,7 +16,7 @@ struct DirLight{
   float intensity;
 };
 
-uniform LightInfo{
+uniform interface_block_0{
   float ambient;
   int point_light_count;
   int spot_light_count;
@@ -29,7 +29,7 @@ in vec2 frag_tc;
 out vec4 out_color;
 
 void main(){
-  vec4 tex_lookup_0 =  texture(texture0, frag_tc);
+  vec4 tex_lookup_0 =  texture(texture_0, frag_tc);
   vec3 frag_pos_world = tex_lookup_0.xyz;
 
   
@@ -51,7 +51,7 @@ void main(){
   }
   
   const float bias = 0.01;
-  vec2 texel_size = 1.0 / textureSize(texture1, 0).xy;
+  vec2 texel_size = 1.0 / textureSize(texture_1, 0).xy;
 
   int i = 0;
   DirLight dir_light = dir_lights[i];
@@ -88,16 +88,16 @@ void main(){
     float depth_0 = 0;
     if(cascade_idx == 0){   
       frag_pos_light = dir_light.projections[0] * vec4(frag_pos_world, 1);
-      depth_0 = texture(texture1, vec3(light_coords.xy, 0)).r;
+      depth_0 = texture(texture_1, vec3(light_coords.xy, 0)).r;
     }else if(cascade_idx == 1){
       frag_pos_light = dir_light.projections[1] * vec4(frag_pos_world, 1);
-      depth_0 = texture(texture1, vec3(light_coords.xy, 1)).r;
+      depth_0 = texture(texture_1, vec3(light_coords.xy, 1)).r;
     }else{
       frag_pos_light = dir_light.projections[2] * vec4(frag_pos_world, 1);
-      depth_0 = texture(texture1, vec3(light_coords.xy, 2)).r;
+      depth_0 = texture(texture_1, vec3(light_coords.xy, 2)).r;
     }
 #else
-    float depth_0 = texture(texture1, vec3(light_coords.xy, cascade_idx)).r;
+    float depth_0 = texture(texture_1, vec3(light_coords.xy, cascade_idx)).r;
 #endif
     
     if(depth_1 - bias > depth_0){

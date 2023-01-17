@@ -1,7 +1,7 @@
 #version 460
 
-uniform sampler2D      texture0;
-uniform sampler2DArray texture1;
+uniform sampler2D      texture_0;
+uniform sampler2DArray texture_1;
     
 struct PointLight{
   vec3  pos;
@@ -16,7 +16,7 @@ struct DirLight{
   float intensity;
 };
 
-uniform LightInfo{
+uniform interface_block_0{
   float ambient;
   int point_light_count;
   int spot_light_count;
@@ -39,7 +39,7 @@ void main(){
   
   float depth = clip_space_z / 100.0;
 
-  out_color = texture(texture0, frag_tc.xy) * frag_color;
+  out_color = texture(texture_0, frag_tc.xy) * frag_color;
   
   // calculate cascade index for shadow maps
   int cascade_idx = 1;
@@ -78,7 +78,7 @@ void main(){
 #if 1
   
   float bias = 0.01;
-  vec2 texel_size = 1.0 / textureSize(texture1, 0).xy;
+  vec2 texel_size = 1.0 / textureSize(texture_1, 0).xy;
   
   for(int i = 0; i < dir_light_count; i++){
     DirLight dir_light = dir_lights[i];
@@ -123,16 +123,16 @@ void main(){
     float depth_0 = 0;
     if(cascade_idx == 0){   
       frag_pos_light = dir_light.projections[0] * vec4(frag_pos_world, 1);
-      depth_0 = texture(texture1, vec3(light_coords.xy + offset, 0)).r;
+      depth_0 = texture(texture_1, vec3(light_coords.xy + offset, 0)).r;
     }else if(cascade_idx == 1){
       frag_pos_light = dir_light.projections[1] * vec4(frag_pos_world, 1);
-      depth_0 = texture(texture1, vec3(light_coords.xy + offset, 1)).r;
+      depth_0 = texture(texture_1, vec3(light_coords.xy + offset, 1)).r;
     }else{
       frag_pos_light = dir_light.projections[2] * vec4(frag_pos_world, 1);
-      depth_0 = texture(texture1, vec3(light_coords.xy + offset, 2)).r;
+      depth_0 = texture(texture_1, vec3(light_coords.xy + offset, 2)).r;
     }
 #else
-    float depth_0 = texture(texture1, vec3(light_coords.xy + offset, cascade_idx)).r;
+    float depth_0 = texture(texture_1, vec3(light_coords.xy + offset, cascade_idx)).r;
 #endif
           
           if(depth_1 - bias > depth_0){

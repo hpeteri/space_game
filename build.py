@@ -69,8 +69,12 @@ def set_command_line_options():
     if "release" in sys.argv:
         preprocessor +=  "-D RELEASE_BUILD "
     else:
-        preprocessor += "-D DEBUG_BUILD "
+        preprocessor += """
+        -D DEBUG_BUILD 
+        -D SGLR_DEBUG_BUILD
+        """
 
+        
     if cc == "gcc":
         if sys.platform == "linux":
             libs += """
@@ -92,10 +96,10 @@ def set_command_line_options():
 
         if "release" in sys.argv:
             compiler_options += "-O3"
-            preprocessor += "-s"
+            preprocessor += "-s -pipe"
         else:
             compiler_options += "-O0"
-            preprocessor += "-g"
+            preprocessor += "-g -pipe"
             
         warnings += """
         -Wformat=2 
