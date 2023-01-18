@@ -40,7 +40,7 @@ void main(){
   float depth = clip_space_z / 100.0;
 
   out_color = texture(texture_0, frag_tc.xy) * frag_color;
-  
+
   // calculate cascade index for shadow maps
   int cascade_idx = 1;
   
@@ -157,6 +157,5 @@ void main(){
   
   float gamma = 2.2;
   out_color.rgb = pow(out_color.rgb, vec3(1.0 / gamma));
-  
 }
   

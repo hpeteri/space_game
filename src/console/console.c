@@ -108,15 +108,17 @@ void update_and_draw_console(){
       sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(flat_mat, GL_TRIANGLES);
       pipeline.renderer_state.flags = SGLR_CULL_FACE | SGLR_BLEND;
       
-      sglr_CommandBuffer2* scb = sglr_make_command_buffer2_im(pipeline);
-      
+      sglr_CommandBuffer2* scb = sglr_make_command_buffer2();
       sglr_command_buffer2_add_cam(scb, cam);
+
+      sglr_ImmediateModeCmd* cmd = sglr_immediate_begin(pipeline);
+      
       
       vec3 p0 = vec3_make(0, (1 - console.openness) * window_height, -1);
       vec3 p1 = vec3_make(window_width, window_height, -1);
 
       // draw bg
-      sglr_immediate_quad_min_max(scb,
+      sglr_immediate_quad_min_max(cmd,
                                   p0, vec3_zero(), color_bg,
                                   p1, vec3_zero(), color_bg);
       // draw input bar bg
@@ -124,27 +126,29 @@ void update_and_draw_console(){
       p1.y = p0.y;
       p0.y = p1.y - font_height - text_pad * 2;
       
-      sglr_immediate_quad_min_max(scb,
+      sglr_immediate_quad_min_max(cmd,
                                   p0, vec3_zero(), color_input_bg,
                                   p1, vec3_zero(), color_input_bg);
       
 
-      
+      sglr_cmd_immediate_draw(scb, cmd);
       sglr_command_buffer2_submit(scb, cb);
     }
     {
       sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(text_mat, GL_TRIANGLES);
       pipeline.renderer_state.flags = 0;
       
-      sglr_CommandBuffer2* scb = sglr_make_command_buffer2_im(pipeline);
+      sglr_CommandBuffer2* scb = sglr_make_command_buffer2();
       sglr_command_buffer2_add_cam(scb, cam);
+
+      sglr_ImmediateModeCmd* cmd = sglr_immediate_begin(pipeline);
 
       vec3 p0 = vec3_make(0, (1 - console.openness) * window_height - font_height, -1);
       
       p0.x += text_pad;
       p0.y -= text_pad;
       
-      sglr_immediate_text(scb,
+      sglr_immediate_text(cmd,
                           console.input_line,
                           p0,
                           font_scale,
@@ -163,7 +167,7 @@ void update_and_draw_console(){
         
         p0.y -= it->size.y - text_pad * 2;
 
-        sglr_immediate_text(scb,
+        sglr_immediate_text(cmd,
                             it->string,
                             p0,
                             font_scale,
@@ -176,7 +180,8 @@ void update_and_draw_console(){
           break;
       }
 
-      
+
+      sglr_cmd_immediate_draw(scb, cmd);
       sglr_command_buffer2_submit(scb, cb);
     }
     {
@@ -185,8 +190,11 @@ void update_and_draw_console(){
       sglr_GraphicsPipeline pipeline = sglr_make_graphics_pipeline_default(flat_mat, GL_TRIANGLES);
       pipeline.renderer_state.flags = SGLR_CULL_FACE | SGLR_BLEND;
       
-      sglr_CommandBuffer2* scb = sglr_make_command_buffer2_im(pipeline);
+      sglr_CommandBuffer2* scb = sglr_make_command_buffer2();
       sglr_command_buffer2_add_cam(scb, cam);
+
+      sglr_ImmediateModeCmd* cmd = sglr_immediate_begin(pipeline);
+
       
       vec3 p0 = vec3_make(0, (1 - console.openness) * window_height - font_height, -1);
       
@@ -197,10 +205,11 @@ void update_and_draw_console(){
       vec3 p1 = vec3_make(p0.x + font_height, p0.y + font_height, p0.y);
       
       // draw cursor
-      sglr_immediate_quad_min_max(scb,
+      sglr_immediate_quad_min_max(cmd,
                                   p0, vec3_zero(), color_cursor,
                                   p1, vec3_zero(), color_cursor);
-      
+
+      sglr_cmd_immediate_draw(scb, cmd);
       sglr_command_buffer2_submit(scb, cb);      
     }
     sglr_command_buffer_submit(cb);

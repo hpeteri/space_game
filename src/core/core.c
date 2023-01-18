@@ -52,7 +52,7 @@ int make_core(){
   
   sglr_set_context(renderer);
   
-  sglr_make_main_render_target(window_width, window_height, 0, GL_RGBA16F, GL_DEPTH_COMPONENT32F);
+  sglr_make_main_render_target(window_width, window_height, 4, GL_RGBA16F, GL_DEPTH_COMPONENT32F);
   sglr_set_render_target_debug_name(sglr_main_render_target(), "main_rt");
   
   glEnable(GL_MULTISAMPLE);
@@ -71,7 +71,7 @@ int make_core(){
 void free_core(){
   sglr_free_debug_logger();
   sglr_free_context(sglr_current_context());
-
+  
   n1_Window* window = core.window;
   platform_free_glcontext(window);  
   platform_free_window(window);

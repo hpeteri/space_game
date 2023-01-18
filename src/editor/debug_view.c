@@ -24,8 +24,8 @@ void update_samples(){
 vec3 draw_graph(const char* title,
                 vec3 cursor,
                 float scale,
-                sglr_CommandBuffer2* text_cb,
-                sglr_CommandBuffer2* flat_cb,
+                sglr_ImmediateModeCmd* text_cb,
+                sglr_ImmediateModeCmd* flat_cb,
                 float graph_height,
                 int sample_count,
                 float samples[],
@@ -136,9 +136,11 @@ void draw_debug_view(){
   pipeline.renderer_state.flags = 0;
   
   // set camera
-  sglr_CommandBuffer2* scb = sglr_make_command_buffer2_im(pipeline);
+  sglr_CommandBuffer2* scb = sglr_make_command_buffer2();
   sglr_command_buffer2_add_cam(scb, cam);
-  
+
+  sglr_ImmediateModeCmd* cmd = sglr_immediate_begin(pipeline);
+      
 
   float          scale       = 2;
   const float    pad_x       = 4 * scale;
@@ -149,7 +151,7 @@ void draw_debug_view(){
 
   //fps counter
   sprintf(buffer, "%d", fps);
-  sglr_immediate_text(scb, buffer,
+  sglr_immediate_text(cmd, buffer,
                       cursor,
                       scale,
                       sglr_color_yellow);
@@ -172,7 +174,7 @@ void draw_debug_view(){
           sglr_stats_triangle_count());
 
   
-  vec2 text_size = sglr_immediate_text(scb,
+  vec2 text_size = sglr_immediate_text(cmd,
                                        buffer,
                                        cursor,
                                        scale,
@@ -200,7 +202,7 @@ void draw_debug_view(){
           get_process_mem_use());
 #endif
   
-  text_size = sglr_immediate_text(scb,
+  text_size = sglr_immediate_text(cmd,
                                   buffer,
                                   cursor,
                                   scale,
@@ -218,10 +220,12 @@ void draw_debug_view(){
   pipeline2.renderer_state.flags = 0;
 
     
-  sglr_CommandBuffer2* scb_2 = sglr_make_command_buffer2_im(pipeline2);
+  sglr_CommandBuffer2* scb_2 = sglr_make_command_buffer2();
   sglr_command_buffer2_add_cam(scb_2, cam);
-
-  sglr_immediate_color(scb_2, 0xff0000ff);
+  
+  sglr_ImmediateModeCmd* cmd_2 = sglr_immediate_begin(pipeline2);
+  
+  sglr_immediate_color(cmd_2, 0xff0000ff);
 
   const int graph_height = 20 * scale;
   const float offset = 2 * scale;
@@ -230,8 +234,8 @@ void draw_debug_view(){
   cursor = draw_graph("gpu",
                       cursor,
                       scale,
-                      scb,
-                      scb_2,
+                      cmd,
+                      cmd_2,
                       graph_height,
                       GPU_HISTORY_SAMPLE_COUNT,
                       gpu_samples,
@@ -241,13 +245,17 @@ void draw_debug_view(){
   cursor = draw_graph("cpu",
                       cursor,
                       scale,
-                      scb,
-                      scb_2,
+                      cmd,
+                      cmd_2,
                       graph_height,
                       CPU_HISTORY_SAMPLE_COUNT,
                       cpu_samples,
                       cpu_sample_at);
 
+
+  sglr_cmd_immediate_draw(scb_2, cmd_2);
+  sglr_cmd_immediate_draw(scb, cmd);                         
+  
   sglr_command_buffer2_submit(scb_2, cb);
   sglr_command_buffer2_submit(scb, cb);
   

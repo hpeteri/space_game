@@ -80,6 +80,21 @@ Shadow mapping in deferred
   - filtering is also simpler
   - less uniform data passed to shaders, less bandwidth use
 
-  
 
- 
+
+
+Z_Prepass:
+  - depth
+  - world position
+
+
+Shadow compute:
+  Z_Prepass > world position
+
+  light info
+  write to shadow texture
+
+
+Main pass
+  Shadow Compute
+  

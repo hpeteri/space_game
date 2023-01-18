@@ -20,7 +20,7 @@ void update_and_draw(){
   do_editor_camera();
     
   draw_scene();
-
+  //draw_scene_simple();
   update_and_draw_console();
   draw_editor();
 }
